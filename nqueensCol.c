@@ -8,7 +8,7 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count);
 
 //MAIN
 int main(){
-    int n = 8, sol = 0, maxQueens = 0, count = 0;
+    int n = 8, sol = 0, maxQueens = 0, count = 0, skip = 1;
 
     //alocando rainhas
     int **queens = (int**) malloc(n  * sizeof(int *));
@@ -20,7 +20,7 @@ int main(){
             queens[i][j] = 0;
         }
     }   
-    queens[0][0] = 1;
+    queens[0][skip] = 1;
     play(queens, 1, n, &sol, &maxQueens, &count);
 
     //imprime resultados
@@ -132,7 +132,7 @@ void printTabuleiro(int **queens, int n){
 }
 
 //executa testes
-void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count){
+void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int skip){
 
     if (col == n){
         printf("\nSolucao #%d\n", ++*sol);
@@ -140,10 +140,13 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count){
         return;
     }
     for(int i = 0; i < n; ++i){
+        if(i == skip){
+            continue;
+        }
         if(!checkQueen(queens, i, col, n)){
             queens[i][col] = 1;
             ++*count;
-            play(queens, col+1, n, sol, maxQueens, count);
+            play(queens, col+1, n, sol, maxQueens, count, skip);
 
             if(*count > *maxQueens){
                 *maxQueens = *count;

@@ -24,28 +24,29 @@ int main(){
     double starttime, stoptime;
     int n = 8, sol = 0, maxQueens = 0, count = 0;
 
-    //alocando rainhas
-    int **queens = (int**) malloc(n  * sizeof(int *));
-    for(int i = 0; i < n; ++i)
-        queens[i] = (int*) malloc(n  * sizeof(int));
-
-    for(int i = 0; i < n; ++i){
-        for(int j = 0; j < n; ++j){
-            queens[i][j] = 0;
-        }
-    }
-
     if(my_rank == 0){ //MESTRE
+        //alocando rainhas
+        int **queens = (int**) malloc(n  * sizeof(int *));
+        for(int i = 0; i < n; ++i)
+            queens[i] = (int*) malloc(n  * sizeof(int));
+
+        for(int i = 0; i < n; ++i){
+            for(int j = 0; j < n; ++j){
+                queens[i][j] = 0;
+            }
+        }
         for (size_t i = 0; i < n; i++)
         {
             for (size_t j = 0; j < count; j++)
             {
-                
+                //botar uma rainha e botar no saco
             }
             
         }
+        //mandar para os escravos
         
     } else { //ESCRAVO
+        //recebe o tabuleiro e executa o metodo play
         play(queens, 0, n, &sol, &maxQueens, &count);
     }
     printf("Rank: %d Message %d", my_rank, message);

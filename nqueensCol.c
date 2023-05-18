@@ -10,7 +10,7 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
 int main(){
     int n = 8, sol = 0, maxQueens = 0, count = 1;
     int x = 5;
-    int y = 7;
+    int y = 0;
 
 
     //alocando rainhas

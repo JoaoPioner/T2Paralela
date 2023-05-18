@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include "mpi.h"
 
-#define TAREFAS 7
+#define TAREFAS 100
 
 int checkQueen(int **queens, int linha, int col, int n);
-void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count);
+void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y);
 
 
 //MAIN
@@ -14,36 +14,43 @@ int main(){
     int my_rank;
     int proc_n;
     //linha de comando (np)
-    int message = 1;
-    int saco[TAREFAS];
+    int message[2];
+    int saco[2*TAREFAS];
     MPI_Init(&argc , &argv);
     MPI_Status status;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_n);
 
-    double starttime, stoptime;
-    int n = 8, sol = 0, maxQueens = 0, count = 0;
+    int n = 8, sol = 0, maxQueens = 0, count = 0, x = 0, y = 0;
+
+    int **queens = (int**) malloc(n  * sizeof(int *));
+    for(int i = 0; i < n; ++i)
+            queens[i] = (int*) malloc(n  * sizeof(int));
+
+    for(int i = 0; i < n; ++i){
+        for(int j = 0; j < n; ++j){
+            queens[i][j] = 0;
+        }
+    }
 
     if(my_rank == 0){ //MESTRE
         //alocando rainhas
-        int **queens = (int**) malloc(n  * sizeof(int *));
-        for(int i = 0; i < n; ++i)
-            queens[i] = (int*) malloc(n  * sizeof(int));
-
-        for(int i = 0; i < n; ++i){
-            for(int j = 0; j < n; ++j){
-                queens[i][j] = 0;
+        for (size_t z = 0; z < 2*TAREFAS; z=z+2) {
+            for (size_t i = 0; i < n; i++) {
+                for (size_t j = 0; j < n-1; j++) {
+                    saco[z] = i;
+                    saco[z+1] = j;
+                }   
             }
         }
-        for (size_t i = 0; i < n; i++)
+        int index = 0;
+        for (size_t i = 0; i < TAREFAS; i++)
         {
-            for (size_t j = 0; j < count; j++)
-            {
-                //botar uma rainha e botar no saco
-            }
-            
+            message[0] = saco[i];
+            message[0] = saco[i+1];
+            //mandar para os escravos
+            MPI_Send(message, 2, MPI_INT, index+1, index+1, MPI_COMM_WORLD);
         }
-        //mandar para os escravos
         
     } else { //ESCRAVO
         //recebe o tabuleiro e executa o metodo play

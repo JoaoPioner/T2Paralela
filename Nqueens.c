@@ -35,26 +35,43 @@ int main(){
 
     if(my_rank == 0){ //MESTRE
         //alocando rainhas
-        for (size_t z = 0; z < 2*TAREFAS; z=z+2) {
-            for (size_t i = 0; i < n; i++) {
-                for (size_t j = 0; j < n-1; j++) {
-                    saco[z] = i;
-                    saco[z+1] = j;
-                }   
-            }
-        }
         int index = 0;
-        for (size_t i = 0; i < TAREFAS; i++)
+        while (index<2*TAREFAS) {
+            for (size_t i = 0; i < 10; i++) {
+                for (size_t j = 0; j < 10; j++) {
+                    saco[index] = i;
+                    index++;
+                    saco[index]= j;
+                    index++;
+                }
+            }   
+        }
+        int id = 0;
+        for (size_t i = 0; i < 2*TAREFAS; i+=2)
         {
             message[0] = saco[i];
-            message[0] = saco[i+1];
+            message[1] = saco[i+1];
             //mandar para os escravos
-            MPI_Send(message, 2, MPI_INT, index+1, index+1, MPI_COMM_WORLD);
+            MPI_Send(message, 2, MPI_INT, id+1, id+1, MPI_COMM_WORLD);
+            id++;
+            
+        }
+
+        for ( i=0 ; i < TAREFAS ; i++)
+        {
+            // recebo mensagens de qualquer emissor e com qualquer etiqueta (TAG)
+
+            MPI_Recv(message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);  // recebo por ordem de chegada com any_source
+
+            saco[status.MPI_SOURCE-1] = message;   // coloco mensagem no saco na posição do escravo emissor
         }
         
     } else { //ESCRAVO
+        //MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
         //recebe o tabuleiro e executa o metodo play
-        play(queens, 0, n, &sol, &maxQueens, &count);
+        MPI_Recv(message, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        message[0] = play(queens, 0, n, &sol, &maxQueens, &count, message[0], message[1]);
+        MPI_Send(message[0], 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
     printf("Rank: %d Message %d", my_rank, message);
     MPI_Finalize();    
@@ -158,17 +175,24 @@ int checkQueen(int **queens, int linha, int col, int n){
     return a;
 }
 //executa testes
-void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count){
+void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
 
     if (col == n){
-        ++*sol;
+        printf("\nSolucao #%d\n", ++*sol);
+        printTabuleiro(queens, n);
         return;
     }
     for(int i = 0; i < n; ++i){
+        if (col == y && y<n-1){
+            col++;
+        }
+        if(i == x){
+            continue;
+        }
         if(!checkQueen(queens, i, col, n)){
             queens[i][col] = 1;
             ++*count;
-            play(queens, col+1, n, sol, maxQueens, count);
+            play(queens, col+1, n, sol, maxQueens, count, x, y);
 
             if(*count > *maxQueens){
                 *maxQueens = *count;

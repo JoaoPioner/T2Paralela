@@ -11,10 +11,12 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
 //MAIN
 int main(){
 
+    int numSlave = 3;
     int my_rank;
     int proc_n;
     //linha de comando (np)
     int message[2];
+    int respostas[2*TAREFAS];
     int saco[2*TAREFAS];
     MPI_Init(&argc , &argv);
     MPI_Status status;
@@ -46,15 +48,32 @@ int main(){
                 }
             }   
         }
-        int id = 0;
-        for (size_t i = 0; i < 2*TAREFAS; i+=2)
+
+        for (size_t i = 0; i < 2*TAREFAS; i+=2)//tem que ser i até n escravos
         {
             message[0] = saco[i];
             message[1] = saco[i+1];
             //mandar para os escravos
-            MPI_Send(message, 2, MPI_INT, id+1, id+1, MPI_COMM_WORLD);
-            id++;
+            MPI_Send(message, 2, MPI_INT, i, i, MPI_COMM_WORLD);
             
+        }
+
+        int accKill = 0;
+        int pos = 0; // pos = ultima posicao do saco
+        int aux = 0;// preciso mudar este nome
+        while(accKill < numSlave){
+            MPI_Recv(message, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);
+            respostas[aux] = message[0];
+            respostas[aux+1] = message[1];
+            aux+=2;
+            if(pos < 2*TAREFAS){
+                message[0] = pos;
+                message[1] = pos+1;
+                MPI_Send(message, 2, MPI_INT, status.MPI_SOURCE, status.MPI_SOURCE, MPI_COMM_WORLD);
+            } else {
+                accKill++;
+                MPI_Send(0, 1, MPI_INT, status.MPI_SOURCE, "Kill", MPI_COMM_WORLD);// se o escravo receber kill ele vai direto para o finalize
+            }
         }
 
         for ( i=0 ; i < TAREFAS ; i++)
@@ -175,12 +194,12 @@ int checkQueen(int **queens, int linha, int col, int n){
     return a;
 }
 //executa testes
-void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
+int play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
 
     if (col == n){
         printf("\nSolucao #%d\n", ++*sol);
         printTabuleiro(queens, n);
-        return;
+        return *sol;
     }
     for(int i = 0; i < n; ++i){
         if (col == y && y<n-1){
@@ -192,7 +211,7 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
         if(!checkQueen(queens, i, col, n)){
             queens[i][col] = 1;
             ++*count;
-            play(queens, col+1, n, sol, maxQueens, count, x, y);
+            *sol += play(queens, col+1, n, sol, maxQueens, count, x, y);
 
             if(*count > *maxQueens){
                 *maxQueens = *count;
@@ -201,6 +220,9 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
             queens[i][col] = 0;
            
         }
+    }
+    if (col != n){
+        return 0;
     }
 
 }

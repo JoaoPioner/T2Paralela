@@ -11,12 +11,12 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
 //MAIN
 int main(){
 
-    int numSlave = 3;
+    int numSlave = 3; // numero de escravos
     int my_rank;
     int proc_n;
     //linha de comando (np)
     int message[2];
-    int respostas[2*TAREFAS];
+    int resposta = 0;
     int saco[2*TAREFAS];
     MPI_Init(&argc , &argv);
     MPI_Status status;
@@ -49,55 +49,44 @@ int main(){
             }   
         }
 
-        for (size_t i = 0; i < 2*TAREFAS; i+=2)//tem que ser i até n escravos
+        index = 0;
+        for (size_t i = 1; i <= numSlave; i++)//tem que ser i até n escravos
         {
-            message[0] = saco[i];
-            message[1] = saco[i+1];
+            message[0] = saco[index];
+            message[1] = saco[index+1];
+            index+=2;
             //mandar para os escravos
             MPI_Send(message, 2, MPI_INT, i, i, MPI_COMM_WORLD);
             
         }
 
         int accKill = 0;
-        int pos = 0; // pos = ultima posicao do saco
-        int aux = 0;// preciso mudar este nome
+        int pos = index; // pos = ultima posicao do saco
         while(accKill < numSlave){
-            MPI_Recv(message, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);
-            respostas[aux] = message[0];
-            respostas[aux+1] = message[1];
-            aux+=2;
+            MPI_Recv(&sol, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);
+            resposta += *sol;// verificar a linha
             if(pos < 2*TAREFAS){
                 message[0] = pos;
                 message[1] = pos+1;
                 MPI_Send(message, 2, MPI_INT, status.MPI_SOURCE, status.MPI_SOURCE, MPI_COMM_WORLD);
             } else {
                 accKill++;
-                MPI_Send(0, 1, MPI_INT, status.MPI_SOURCE, "Kill", MPI_COMM_WORLD);// se o escravo receber kill ele vai direto para o finalize
+                MPI_Send(0, 1, MPI_INT, status.MPI_SOURCE, -1, MPI_COMM_WORLD);// se o escravo receber kill(-1) ele vai direto para o finalize
             }
         }
-
-        for ( i=0 ; i < TAREFAS ; i++)
-        {
-            // recebo mensagens de qualquer emissor e com qualquer etiqueta (TAG)
-
-            MPI_Recv(message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);  // recebo por ordem de chegada com any_source
-
-            saco[status.MPI_SOURCE-1] = message;   // coloco mensagem no saco na posição do escravo emissor
-        }
+        printf("Rank: %d Message %d", my_rank, message);
+        MPI_Finalize();    
         
     } else { //ESCRAVO
         //MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
         //recebe o tabuleiro e executa o metodo play
         MPI_Recv(message, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        message[0] = play(queens, 0, n, &sol, &maxQueens, &count, message[0], message[1]);
-        MPI_Send(message[0], 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        if(status.MPI_TAG == -1) {
+            MPI_Finalize();
+        }
+        play(queens, 0, n, &sol, &maxQueens, &count, message[0], message[1]);
+        MPI_Send(&sol, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
-    printf("Rank: %d Message %d", my_rank, message);
-    MPI_Finalize();    
-
-    //imprime resultados
-    printf("Maximo de rainhas: %d \n", maxQueens);
-    printf("Numero de solucoes: %d \n", sol);
 
 
     return 0;
@@ -194,12 +183,12 @@ int checkQueen(int **queens, int linha, int col, int n){
     return a;
 }
 //executa testes
-int play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
+void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
 
     if (col == n){
         printf("\nSolucao #%d\n", ++*sol);
         printTabuleiro(queens, n);
-        return *sol;
+        return ;
     }
     for(int i = 0; i < n; ++i){
         if (col == y && y<n-1){
@@ -211,7 +200,7 @@ int play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int
         if(!checkQueen(queens, i, col, n)){
             queens[i][col] = 1;
             ++*count;
-            *sol += play(queens, col+1, n, sol, maxQueens, count, x, y);
+            play(queens, col+1, n, sol, maxQueens, count, x, y);
 
             if(*count > *maxQueens){
                 *maxQueens = *count;

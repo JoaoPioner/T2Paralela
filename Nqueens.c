@@ -17,6 +17,7 @@ int main(int argc, char **argv){
     //linha de comando (np)
     int message[2];
     int saco[2*TAREFAS];
+    int resposta = 0;
     MPI_Init(&argc , &argv);
     MPI_Status status;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -70,24 +71,18 @@ int main(int argc, char **argv){
                 MPI_Send(message, 2, MPI_INT, status.MPI_SOURCE, status.MPI_SOURCE, MPI_COMM_WORLD);
             } else {
                 accKill++;
-                MPI_Send(0, 1, MPI_INT, status.MPI_SOURCE, -1, MPI_COMM_WORLD);// se o escravo receber kill(-1) ele vai direto para o finalize
             }
         }
         printf("Rank: %d Message %d", my_rank, message);
-        MPI_Finalize();    
-        
     } else { //ESCRAVO
         //MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
         //recebe o tabuleiro e executa o metodo play
         MPI_Recv(message, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        if(status.MPI_TAG == -1) {
-            MPI_Finalize();
-        }
         play(queens, 0, n, &sol, &maxQueens, &count, message[0], message[1]);
         MPI_Send(&sol, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
-
+   MPI_Finalize();
     return 0;
 }
 
@@ -206,9 +201,6 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
             queens[i][col] = 0;
            
         }
-    }
-    if (col != n){
-        return 0;
     }
 
 }

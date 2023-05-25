@@ -9,14 +9,13 @@ void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, in
 
 
 //MAIN
-int main(){
+int main(int argc, char **argv){
 
     int numSlave = 3; // numero de escravos
     int my_rank;
     int proc_n;
     //linha de comando (np)
     int message[2];
-    int resposta = 0;
     int saco[2*TAREFAS];
     MPI_Init(&argc , &argv);
     MPI_Status status;
@@ -63,8 +62,8 @@ int main(){
         int accKill = 0;
         int pos = index; // pos = ultima posicao do saco
         while(accKill < numSlave){
-            MPI_Recv(&sol, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, status);
-            resposta += *sol;// verificar a linha
+            MPI_Recv(&sol, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            resposta += sol;// verificar a linha
             if(pos < 2*TAREFAS){
                 message[0] = pos;
                 message[1] = pos+1;
@@ -186,8 +185,6 @@ int checkQueen(int **queens, int linha, int col, int n){
 void play(int **queens, int col, int n, int *sol, int *maxQueens, int *count, int x, int y){
 
     if (col == n){
-        printf("\nSolucao #%d\n", ++*sol);
-        printTabuleiro(queens, n);
         return ;
     }
     for(int i = 0; i < n; ++i){

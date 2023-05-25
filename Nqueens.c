@@ -77,8 +77,10 @@ int main(int argc, char **argv){
     } else { //ESCRAVO
         //MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
         //recebe o tabuleiro e executa o metodo play
-        MPI_Recv(message, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+       	printf("escravo");
+	MPI_Recv(message, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         play(queens, 0, n, &sol, &maxQueens, &count, message[0], message[1]);
+	printf("escravo2");
         MPI_Send(&sol, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
